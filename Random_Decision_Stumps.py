@@ -1,5 +1,7 @@
+from sklearn.base import BaseEstimator
 
-class OurRDS:
+
+class OurRDS(BaseEstimator):
     def __init__(self):
         # TODO
         pass

@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 
+from Gini import Gini
 from Random_Decision_Stumps import OurRDS
 
 if __name__ == '__main__':
@@ -18,14 +19,14 @@ if __name__ == '__main__':
     x, y = datasets.make_classification(
         weights=None,
         n_samples=400,
-        n_features=2,
+        n_features=1,
         n_classes=2,
-        n_informative=2,
+        n_informative=1,
         n_redundant=0,
         n_repeated=0,
         flip_y=0.08,
         random_state=rnd_seed,
-        n_clusters_per_class=2
+        n_clusters_per_class=1
     )
 
     # Split train/test
@@ -72,3 +73,40 @@ if __name__ == '__main__':
 
     print(f"random forest acc score after folds:\n" "%.3f" % np.mean(a_score_rfc))
     print(f"decision tree acc score after folds:\n" "%.3f" % np.mean(a_score_dtc))
+
+
+    print(y_test)
+    print(x_test)
+
+
+    gini = Gini()
+
+    print(gini.y_counts)
+
+    ones = 0
+    zeros = 0
+
+    for item in y_test:
+        if item == 1:
+            ones += 1
+        else:
+            zeros += 1
+    print(ones)
+    print(zeros)
+
+    test_left = [0, 0, 0, 0, 0, 0, 1]
+    test_right = [0, 0, 0, 1, 1, 1, 1]
+    test_y = []
+    for item in test_left:
+        test_y.append(item)
+    for item in test_right:
+        test_y.append(item)
+
+    gini.original_gini(test_y)
+    gini.gini_weighted(test_left, test_right)
+    gini.calc_gini_gain()
+
+    print(f"Gini weighted {gini.gini_weighted}")
+    print(f"Gini gain {gini.gini_gain}")
+
+    print(gini.org)
