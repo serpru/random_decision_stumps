@@ -16,18 +16,19 @@ if __name__ == '__main__':
     print("Projekt na MSI")
 
     # Seed
-    rnd_seed = 12442
+    rnd_seed = 9865
+    # 12442
 
     # Dataset
     x, y = datasets.make_classification(
         weights=None,
-        n_samples=300,
-        n_features=2,
+        n_samples=400,
+        n_features=1,
         n_classes=2,
-        n_informative=2,
+        n_informative=1,
         n_redundant=0,
         n_repeated=0,
-        flip_y=0.08,
+        flip_y=0.1,
         random_state=rnd_seed,
         n_clusters_per_class=1
     )
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
     # Our Random Decision Stump
     split_point = 0.5
-    ds = OurRDS(split_point=split_point, num_of_splits=20, random_state=rnd_seed)
+    ds = OurRDS(num_of_splits=20, random_state=rnd_seed)
 
     # Random Forest
     # a_score_rfc = []
@@ -88,35 +89,21 @@ if __name__ == '__main__':
         new_x_learn.append([x_learn[i][0]])
 
     for i in range(len(x_test)):
-        new_x_test.append([x_learn[i][0]])
+        new_x_test.append([x_test[i][0]])
 
-    print(new_x_learn)
-    print(x_learn)
+    # print(new_x_learn)
+    # print(x_learn)
 
     ds.fit(new_x_learn, y_learn)
 
-    ds_learn_y = ds.predict(new_x_learn)
-    ds_predict = ds.predict(new_x_test)
+    ds_learn_y = ds.predict(x_learn)
+    ds_predict = ds.predict(x_test)
 
     print("Best Gini")
     print(ds.best_gini)
-    print(ds.gini_list)
+    # print(ds.gini_list)
     print("Best split point")
     print(ds.best_split_point)
-
-    # plot.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap="coolwarm")
-    # plot.axvline(x=split_point, color='b', label='axvline - full height')
-    # plot.xlabel("Atrybut 1")
-    # plot.ylabel("Atrybut 2")
-    # plot.title("Zadanie 1")
-    # plot.show()
-    #
-    # plot.scatter(x_test[:, 0], x_test[:, 1], c=predict_ds, cmap="coolwarm")
-    # plot.axvline(x=split_point, color='b', label='axvline - full height')
-    # plot.xlabel("Atrybut 1")
-    # plot.ylabel("Atrybut 2")
-    # plot.title("Zadanie 1")
-    # plot.show()
 
     fig, ax = plot.subplots(
         nrows=2,
@@ -127,8 +114,8 @@ if __name__ == '__main__':
     random.seed(rnd_seed)
     arr_learn = []
     for x in x_learn:
-        n = random.triangular(0.1, 0.9)
-        arr_learn.append(0.5 + n)
+        n = random.triangular(-0.4, 0.7)
+        arr_learn.append(0.7 + n)
 
     arr_test = []
     for x in x_test:
@@ -138,31 +125,31 @@ if __name__ == '__main__':
     a_score = accuracy_score(y_test, ds_predict)
     print(f"Accuracy score: {a_score}")
 
-    ax[0][0].scatter(new_x_learn[:], arr_learn, c=y_learn, cmap="coolwarm")
-    fig.suptitle("Tytul okna")
+    ax[0][0].scatter(x_learn[:, 0], arr_learn, c=y_learn, cmap="coolwarm")
+    fig.suptitle(f"Accuracy score of test split: {a_score}")
     ax[0][0].set_title("Learning data")
 
-    ax[1][0].scatter(new_x_learn[:], arr_learn, c=ds_learn_y, cmap="coolwarm")
+    ax[1][0].scatter(x_learn[:, 0], arr_learn, c=ds_learn_y, cmap="coolwarm")
     for i in range(len(ds.gini_list)):
         if (ds.gini_list[i] == ds.best_gini) and (ds.best_split_point == ds.split_points[i]):
-            ax[1][0].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.6,
+            ax[1][0].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.7,
                           label='axvline - full height')
-            ax[1][0].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=6)
+            ax[1][0].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=5)
         else:
             ax[1][0].axvline(x=ds.split_points[i], color='black',linestyle="dashed", alpha=0.2 , label='axvline - full height')
             ax[1][0].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=5)
     ax[1][0].set_title("Best split for learning data")
 
-    ax[0][1].scatter(new_x_test[:], arr_test, c=y_test, cmap="coolwarm")
-    fig.suptitle("Tytul okna")
+    ax[0][1].scatter(x_test[:, 0], arr_test, c=y_test, cmap="coolwarm")
+
     ax[0][1].set_title("Test data")
 
-    ax[1][1].scatter(new_x_test[:], arr_test, c=ds_predict, cmap="coolwarm")
+    ax[1][1].scatter(x_test[:, 0], arr_test, c=ds_predict, cmap="coolwarm")
     for i in range(len(ds.gini_list)):
         if (ds.gini_list[i] == ds.best_gini) and (ds.best_split_point == ds.split_points[i]):
-            ax[1][1].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.6,
+            ax[1][1].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.7,
                           label='axvline - full height')
-            ax[1][1].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=6)
+            ax[1][1].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=5)
         else:
             ax[1][1].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.2 , label='axvline - full height')
             ax[1][1].plot(ds.split_points[i], ds.gini_list[i], color="black", marker='.', ms=5)
