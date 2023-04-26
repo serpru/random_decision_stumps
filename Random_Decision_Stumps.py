@@ -15,18 +15,19 @@ class OurRDS(BaseEstimator):
     best_error = 1
     best_split_point = 0
     gini_list = []
-    gini_list_other_direction = []
     split_points = []
     direction = 0
     best_direction = 0
     error_dir_0 = 0
     error_dir_1 = 0
+    error_list = []
+    error_list_dir0 = []
+    error_list_dir1 = []
 
     def __init__(self, num_of_splits, random_state):
         self.gini = Gini()
         self.num_of_splits = num_of_splits
         random.seed(a=random_state)
-
         pass
 
     def fit(self, X, y):
@@ -36,7 +37,16 @@ class OurRDS(BaseEstimator):
         # 4. Powtarzać tyle razy, ile mamy do wyboru punktów splitu
         # 5. Wybrać punkt splitu z najmniejszym gini
 
-        new_y = []
+        self.split_point = 0
+        self.best_gini = 1
+        self.best_error = 1
+        self.best_split_point = 0
+        self.gini_list = []
+        self.split_points = []
+        self.direction = 0
+        self.best_direction = 0
+        self.error_dir_0 = 0
+        self.error_dir_1 = 0
 
         range_list = []
         for i in X:
@@ -45,73 +55,50 @@ class OurRDS(BaseEstimator):
         mean = (abs(range_list[0]) + abs(range_list[-1])) / self.num_of_splits
 
         current_split_point = range_list[0]
-        #random.triangular(range_list[0], range_list[-1])
         for i in range(self.num_of_splits):
-
             self.split_point = current_split_point
 
-            left_data, right_data = self.pre_split(X, y, self.split_point)
+            left_leaf, right_leaf = self.slice(X, y, self.split_point)
 
             #   Direction 0
-            new_left_y_d0, new_right_y_d0 = self.split(left_data[1], right_data[1])
+            classified_left_leaf_d0, classified_right_leaf_d0 = self.split(left_leaf[1], right_leaf[1])
 
-            current_gini_dir0 = self.gini.gini_temp(new_left_y_d0, new_right_y_d0, left_data[1], right_data[1], direction=0)
+            current_gini_dir0 = self.gini.calculate_gini(classified_left_leaf_d0, classified_right_leaf_d0, left_leaf[1], right_leaf[1], direction=0)
 
-            current_error = self.gini.class_error(self.gini.pred_wrong, len(y))
-            #print("Current error d0")
-            #print(current_error)
-            self.error_dir_0 = current_error
-
-            if self.best_gini > current_gini_dir0:
-                self.best_gini = current_gini_dir0
-                self.best_split_point = current_split_point
-                #self.direction = 0
-
-            if self.best_error > current_error:
-                self.best_error = current_error
-
-
+            self.error_dir_0 = self.gini.class_error(self.gini.pred_wrong, len(y))
 
             #   Direction 1
-            new_left_y_d1, new_right_y_d1 = self.split(left_data[1], right_data[1], direction=1)
-            # I think new_left ys need to be used in current_gini
-            current_gini_dir1 = self.gini.gini_temp(new_left_y_d1, new_right_y_d1, left_data[1], right_data[1],
+            classified_left_leaf_d1, classified_right_leaf_d1 = self.split(left_leaf[1], right_leaf[1], direction=1)
+            current_gini_dir1 = self.gini.calculate_gini(classified_left_leaf_d1, classified_right_leaf_d1, left_leaf[1], right_leaf[1],
                                                direction=1)
 
-            current_error = self.gini.class_error(self.gini.pred_wrong, len(y))
-            #print("Current error d1")
-            #print(current_error)
-            self.error_dir_1 = current_error
+            self.error_dir_1 = self.gini.class_error(self.gini.pred_wrong, len(y))
 
+            class_error = 1
+
+            #   Choosing best gini and best direction
             if self.best_gini > current_gini_dir1:
                 self.best_gini = current_gini_dir1
                 self.best_split_point = current_split_point
-                #self.direction = 1
-                print("Errory")
-                print(self.error_dir_0)
-                print(self.error_dir_1)
                 if self.error_dir_0 > self.error_dir_1:
                     self.direction = 1
-                    print("Switched to direction 1")
+                    self.best_error = self.error_dir_1
                 else:
-                    print("Switched to direction 0")
                     self.direction = 0
-
-            if self.best_error > current_error:
-                self.best_error = current_error
+                    self.best_error = self.error_dir_0
 
             final_gini = current_gini_dir0
             if current_gini_dir0 > current_gini_dir1:
                 final_gini = current_gini_dir1
 
+            #   Adding gini and split point to the list
             self.split_points.append(current_split_point)
-            #print(f"Takes Direction {self.direction} Gini (red left = 1)")
-            #print(self.best_gini)
             self.gini_list.append(final_gini)
-            #print("Best error")
-            #print(self.best_error)
-            current_split_point += mean
 
+            self.error_list_dir0.append(self.error_dir_0)
+            self.error_list_dir1.append(self.error_dir_1)
+
+            current_split_point += mean
 
         return self
 
@@ -124,8 +111,8 @@ class OurRDS(BaseEstimator):
                 arr.append(0 + self.direction)
         return arr
 
-    def pre_split(self, X, y, a):
-        #   Splits data into two subsets at splitting point "a"
+    def slice(self, X, y, a):
+        #   Slices data into two subsets at splitting point "a"
         left_x = []
         right_x = []
         left_y = []
@@ -150,24 +137,3 @@ class OurRDS(BaseEstimator):
         for i in right_y:
             new_right_y.append(1-direction)
         return new_left_y, new_right_y
-
-    def split_test(self,X, y,split_point, direction=0):
-        new_y = []
-        for i in range(len(X)):
-            if X[i] >= split_point:
-                new_y.append(0+direction)
-            else:
-                new_y.append(1-direction)
-        return new_y
-
-
-    def prob(self, y):
-        unique_arr = np.unique(y, return_counts=1)
-
-        zeros = unique_arr[1][0]
-        ones = unique_arr[1][1]
-
-        prob_zero = zeros / len(y)
-        prob_one = ones / len(y)
-
-        return prob_zero, prob_one
