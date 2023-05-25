@@ -16,12 +16,12 @@ if __name__ == '__main__':
     print("Projekt na MSI")
 
     # Random Seed
-    rnd_seed = 12442
+    rnd_seed = 3423
     # 12442
     # 9865
 
     #   Number of splits to check per Stump
-    num_of_splits = 20
+    num_of_splits = 15
 
     # Dataset
     x, y = datasets.make_classification(
@@ -36,7 +36,6 @@ if __name__ == '__main__':
         random_state=rnd_seed,
         n_clusters_per_class=1
     )
-
 
     #   Uncomment this to quickly invert y's 0 1 values
     #   to test if the Stump correctly assigns classification direction
@@ -62,7 +61,7 @@ if __name__ == '__main__':
     # Folds
     rskf = RepeatedStratifiedKFold(
         n_splits=2,
-        n_repeats=10,
+        n_repeats=20,
         random_state=rnd_seed,
     )
 
@@ -77,14 +76,20 @@ if __name__ == '__main__':
 
     #   Repeated Stratified K Fold
     a_score_ords = []
+    prev_best_split_point = -10
     for i, (train_index, test_index) in enumerate(rskf.split(x, y)):
-        ords = OurRDS(num_of_splits=20, random_state=rnd_seed)
+        if i == 0:
+            ords = OurRDS(num_of_splits=num_of_splits, random_state=rnd_seed)
+        else:
+            ords = OurRDS(num_of_splits=num_of_splits, random_state=rnd_seed, prev_gini=1, prev_split_point=prev_best_split_point)
         ords.fit(x[train_index], y[train_index])
         predict_ords = ords.predict(x[test_index])
+        prev_best_split_point = ords.best_split_point
         a_score_ords.append(accuracy_score(y[test_index], predict_ords))
 
     print("\n#### Fold results ####")
-    print(a_score_ords)
+    a_score_ords_np = np.array(a_score_ords)
+    print(a_score_ords_np)
 
     mean_score = np.mean(a_score_ords)
     std_score = np.std(a_score_ords)
