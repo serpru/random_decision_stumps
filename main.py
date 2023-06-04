@@ -73,6 +73,9 @@ if __name__ == '__main__':
     print("Best error")
     print(ds.best_error)
 
+    print("Best split point")
+    print(ds.best_split_point)
+
     a_score = accuracy_score(y_test, pred)
     print(a_score)
 

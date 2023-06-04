@@ -186,9 +186,6 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
             replace=is_replace
         )
 
-        print("x_indexes")
-        print(x_indexes)
-
         x_learn = X[:, x_indexes]
         return x_learn
 
