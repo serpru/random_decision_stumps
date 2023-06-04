@@ -11,22 +11,19 @@ rnd_seed = [12442, 2222, 6245, 8452, 5211, 8923, 6821, 1111, 2895, 8712, 9999, 5
 for i in range(len(rnd_seed)):
     # Dataset
     x, y = datasets.make_classification(
-        weights=None,
         n_samples=400,
-        n_features=1,
+        n_features=20,
         n_classes=2,
-        n_informative=1,
+        n_informative=20,
         n_redundant=0,
         n_repeated=0,
-        flip_y=0.3,
-        random_state=rnd_seed[i],
-        n_clusters_per_class=1
+        random_state=rnd_seed[i]
     )
 
     dataset = np.concatenate((x, y[:, np.newaxis]), axis=1)
 
     np.savetxt(
-        f"./datasets/dataset{i}.csv",
+        f"./datasets20f/dataset{i}.csv",
         dataset,
         delimiter=",",
         fmt=["%.5f" for i in range(x.shape[1])] + ["%i"],

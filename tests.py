@@ -8,17 +8,17 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-from Random_Decision_Stumps import OurRDS
+from Random_Decision_Stumps import OurRDS, DecisionStump, RDSEnsemble
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 
 
-rnd_state = 3423
+rnd_state = 1111
 
 data_list = os.listdir(path="./datasets")
 
-classifiers = [GaussianNB(), DecisionTreeClassifier(max_depth=1, random_state=rnd_state), OurRDS(random_state=rnd_state, num_of_splits=100)]
+classifiers = [GaussianNB(), DecisionTreeClassifier(max_depth=1, random_state=rnd_state), DecisionStump(random_state=rnd_state, num_of_splits=50)]
 
 res = np.zeros((len(data_list), 10, len(classifiers)))
 
@@ -53,4 +53,5 @@ print(res)
 print("Print res shape")
 print(res.shape)
 
-np.save(file="results", arr=res)
+
+#np.save(file="results", arr=res)

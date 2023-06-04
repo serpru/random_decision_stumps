@@ -3,13 +3,10 @@ import numpy as np
 
 class Gini:
 
-    classification_error = 0
-    pred_correct = 0
-    pred_wrong = 0
-
     def __init__(self):
-        # TODO
-        pass
+        self.classification_error = 0
+        self.pred_correct = 0
+        self.pred_wrong = 0
 
     def calculate_gini(self, left_y_split, right_y_split, left_y_org, right_y_org, direction):
         g_res = 0

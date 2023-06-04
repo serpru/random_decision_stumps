@@ -7,44 +7,13 @@ from Gini import Gini
 
 
 class OurRDS(BaseEstimator):
-
-    split_point = 0
-    gini = 0
-    num_of_splits = 0
-    best_gini = 1
-    best_error = 1
-    best_split_point = 0
-    gini_list = []
-    split_points = []
-    direction = 0
-    best_direction = 0
-    error_dir_0 = 0
-    error_dir_1 = 0
-    error_list = []
-    error_list_dir0 = []
-    error_list_dir1 = []
-    prev_split_point = -1
-    prev_gini = -1
-    has_prev_gini = False
-
-    def __init__(self, *args, num_of_splits, random_state, prev_split_point=None, prev_gini=None):
+    def __init__(self, *args, num_of_splits, random_state):
         self.gini = Gini()
         self.num_of_splits = num_of_splits
         random.seed(a=random_state)
-        if (prev_split_point != None) and (prev_gini != None):
-            self.prev_split_point = prev_split_point
-            self.prev_gini = prev_gini
-            self.has_prev_gini = True
-        pass
-
-    def fit(self, X, y):
-        # 1. Podzielic na podlisty lewa / prawa, policzyc licznosc w kazdej z nich i wyliczyć prawdopodobieństwo
-        # 2. Wykonać split
-        # 3. Obliczyć gini
-        # 4. Powtarzać tyle razy, ile mamy do wyboru punktów splitu
-        # 5. Wybrać punkt splitu z najmniejszym gini
 
         self.split_point = 0
+        self.num_of_splits = num_of_splits
         self.best_gini = 1
         self.best_error = 1
         self.best_split_point = 0
@@ -54,6 +23,18 @@ class OurRDS(BaseEstimator):
         self.best_direction = 0
         self.error_dir_0 = 0
         self.error_dir_1 = 0
+        self.error_list = []
+        self.error_list_dir0 = []
+        self.error_list_dir1 = []
+
+
+
+    def fit(self, X, y):
+        # 1. Podzielic na podlisty lewa / prawa, policzyc licznosc w kazdej z nich i wyliczyć prawdopodobieństwo
+        # 2. Wykonać split
+        # 3. Obliczyć gini
+        # 4. Powtarzać tyle razy, ile mamy do wyboru punktów splitu
+        # 5. Wybrać punkt splitu z najmniejszym gini
 
         range_list = []
         for i in range(len(X)):
@@ -68,18 +49,9 @@ class OurRDS(BaseEstimator):
         for i in range(self.num_of_splits):
             split_points_list.append(range_list[0] + i*mean)
 
-        if self.has_prev_gini:
-            split_points_list.pop()
-            split_points_list.append(self.prev_split_point)
-            #self.best_gini = self.prev_gini
-            split_points_list.sort()
-
         current_split_point = range_list[0]
 
-        counter = 0
         for i in split_points_list:
-            print(f"Doing magic on split point index {counter}")
-            counter += 1
             self.split_point = i
             current_split_point = i
 
@@ -128,6 +100,7 @@ class OurRDS(BaseEstimator):
 
     def predict(self, X):
         arr = []
+        print(self.best_split_point)
         for i in range(len(X)):
             if X[i][0] >= self.best_split_point:
                 arr.append(1 - self.direction)
@@ -169,41 +142,19 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
         self.num_of_splits = num_of_splits
         self.random_state = random_state
 
+        np.random.seed(self.random_state)
+
         self.classifiers = []
         for n in range(self.n_classifiers):
-            self.classifiers.append(OurRDS(num_of_splits=self.num_of_splits, random_state=self.random_state))
+            self.classifiers.append(DecisionStump(num_of_splits=self.num_of_splits, random_state=self.random_state))
         pass
 
 
     def fit(self, X, y):
-        #   x_learn[i][j] i-index kazdego X, j-index cechy dla danego X
-        #   TODO dla kazdego classifiera przeprowadzic fit
         x_learn = self.pick_random_features(X)
 
-        # print(x_learn[:])
-        # print("x_learn pojedyncza kolumna")
-        # print(x_learn[0][0])
-
-        x_learn2 = np.zeros(shape=(len(x_learn[0]), len(x_learn)))
-
-        for row in range(len(x_learn)):
-            for col in range(len(x_learn[0])):
-                x_learn2[col][row] = x_learn[row][col]
-
-        # print(x_learn2[0][0])
-        # print("x_learn2")
-        # print(x_learn2)
-        #
-        # print("x_learn2[0] i [1]")
-        # print(x_learn2[0])
-        # print(x_learn2[1])
-        # print("x_learn[0] i [1]")
-        # print(x_learn[0])
-        # print(x_learn[1])
         for c in range(self.n_classifiers):
-            # print(x_learn2[c])
-            print(f"Classifier index {c} at work...")
-            self.classifiers[c].fit(x_learn2[c], y)
+            self.classifiers[c].fit(x_learn[:, c], y)
 
         return self
 
@@ -214,28 +165,16 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
         for classifier in self.classifiers:
             pred_list.append(classifier.predict(X))
 
+        pred_list = np.array(pred_list)
 
-        res = []
-        for i in range(len(pred_list[0])):
-            res.append(0)
-
-        for i in range(len(pred_list)):
-            for j in range(len(pred_list[i])):
-                res[j] += pred_list[i][j]
-
-        for i in range(len(res)):
-            if res[i] / self.n_classifiers > 0.5:
-                Y.append(1)
-            else:
-                Y.append(0)
-
-        return Y
+        avg_pred = np.mean(pred_list, axis=0)
+        pred = (avg_pred >= 0.5).astype(int)
+        return pred
 
     def pick_random_features(self, X):
         #   Picks random n_classifiers number of features from X
         #   For example if X.shape = (100, 20), n_classifiers number of features is chosen for each X
         #   It results in x_learn.shape = (100, n_classifiers) sized array
-
         np.random.seed(self.random_state)
         is_replace = False
         if X.shape[1] < self.n_classifiers:
@@ -247,32 +186,137 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
             replace=is_replace
         )
 
-        x_learn = np.zeros(shape=(X.shape[0], len(x_indexes)))
+        print("x_indexes")
+        print(x_indexes)
 
-        for i in range(len(x_learn)):
-            for x in range(len(x_learn[i])):
-                x_learn[i][x] = X[i][x_indexes][x]
-
-        #   x_learn[i][j] i-index kazdego X, j-index cechy dla danego X
-
-        #   To ponizej listuje jeden wiersz. Kazda kolumna to sa te randomowe indexy cech dla kazdego classifiera
-        #   TODO zwracac cala taka liste X
-
-
-        # print("X.shape")
-        # print(X.shape)
-        # print(x_indexes)
-        # print(x_learn.shape)
-        # print("x_learn [0] i [1]")
-        # print(x_learn[0])
-        # print(x_learn[1])
-        #
-        # print("X[0] i [1]")
-        # print(X[0])
-        # print(X[1])
-        #
-        # print("x_learn size")
-        # print(len(x_learn))
-        # print(len(x_learn[0]))
-
+        x_learn = X[:, x_indexes]
         return x_learn
+
+class DecisionStump(BaseEstimator):
+    def __init__(self, *args, num_of_splits, random_state):
+        self.num_of_splits = num_of_splits
+        self.best_gini = 1
+        self.best_error = 1
+        self.best_split_point = 0
+        self.gini_list = []
+        self.split_points = []
+        self.best_direction = 0
+        self.error_dir_0 = 1
+        self.error_dir_1 = 1
+        self.error_list_dir0 = []
+        self.error_list_dir1 = []
+
+    def fit(self, X, y):
+
+        #   Choosing split points. Split points are put across the dataset with equal distance between each other
+        range_list = []
+        for i in range(len(X)):
+            range_list.append(X[i])
+
+        range_list.sort()
+
+        mean = (abs(range_list[0]) + abs(range_list[-1])) / self.num_of_splits
+
+        split_points_list = []
+        for i in range(self.num_of_splits):
+            split_points_list.append(range_list[0] + i*mean)
+
+        for point in split_points_list:
+            current_split_point = point
+
+            indexes_above_split = []
+            indexes_below_split = []
+            for i in range(len(X)):
+                if X[i] >= current_split_point:
+                    indexes_above_split.append(i)
+                else:
+                    indexes_below_split.append(i)
+
+            #   Ignore iteration if there is no data below or above split
+            if not indexes_above_split or not indexes_below_split:
+                continue
+            else:
+                counts_above = np.unique(ar=y[indexes_above_split], return_counts=True)
+                counts_below = np.unique(ar=y[indexes_below_split], return_counts=True)
+
+                #   Failsafe when counts_above[1] has one-element list
+                if len(counts_above[1]) < 2:
+                    gini_above = self.Gini(counts_above[1], 0)
+                else:
+                    gini_above = self.Gini(counts_above[1][0], counts_above[1][1])
+
+                #   Same for counts_below[1]
+                if len(counts_below[1]) < 2:
+                    gini_below = self.Gini(counts_below[1], 0)
+                else:
+                    gini_below = self.Gini(counts_below[1][0], counts_below[1][1])
+
+                sum_above = np.sum(counts_above[1])
+                sum_below = np.sum(counts_below[1])
+                weight_above = sum_above / len(y)
+                weight_below = sum_below / len(y)
+
+                wght_gini = self.Wght_Gini(gini_above, gini_below, weight_above, weight_below)
+
+                #   Classify data above and below split point
+                #   Direction 0-1 (0 below split, 1 above split)
+                Y = np.zeros(shape=X.shape[0], dtype=int)
+
+                Y[indexes_above_split] = 1
+                Y[indexes_below_split] = 0
+
+                error_dir_01 = self.Class_Error(y, Y)
+
+                #   Check class error with direction 1-0
+                Y[indexes_above_split] = 0
+                Y[indexes_below_split] = 1
+
+                error_dir_10 = self.Class_Error(y, Y)
+
+                if wght_gini < self.best_gini:
+                    self.best_gini = wght_gini
+                    self.best_split_point = current_split_point
+                    if error_dir_01 < error_dir_10:
+                        self.best_direction = 0
+                        if error_dir_01 < self.best_error:
+                            self.best_error = error_dir_01
+                    else:
+                        self.best_direction = 1
+                        if error_dir_10 < self.best_error:
+                            self.best_error = error_dir_10
+
+                #   Adding gini and split point to the list
+                self.split_points.append(current_split_point)
+                self.gini_list.append(wght_gini)
+
+                self.error_list_dir0.append(error_dir_01)
+                self.error_list_dir1.append(error_dir_10)
+
+        return self
+
+    def predict(self, X):
+        if self.best_direction == 1:
+            y = np.ones(shape=X.shape[0], dtype=int)
+        else:
+            y = np.zeros(shape=X.shape[0], dtype=int)
+        for i in range(len(X)):
+            if X[i][0] >= self.best_split_point:
+                y[i] = 1 - self.best_direction
+        return y
+
+    def Gini(self, P1, P2):
+        # P1 and P2 are the counts for each class after the split
+        sum = P1 + P2
+        Gini = 2 * (P1 / sum) * (P2 / sum)
+        return (Gini)
+
+    def Wght_Gini(self, gini1, gini2, weight1, weight2):
+        w_gini = (weight1 * gini1) + (weight2 * gini2)
+        return w_gini
+
+    def Class_Error(self, y_org, y):
+        wrong = 0
+        for i in range(len(y_org)):
+            if y_org[i] != y[i]:
+                wrong += 1
+        return wrong / len(y)

@@ -8,16 +8,17 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-from Random_Decision_Stumps import OurRDS
+from Random_Decision_Stumps import OurRDS, DecisionStump
 
 
 # Random Seed
-rnd_seed = 3423
+rnd_seed = 1111
+# 3423
 # 12442
 # 9865
 
 #   Number of splits to check per Stump
-num_of_splits = [5, 20, 50, 200, 500, 2000]
+num_of_splits = [2, 5, 20, 50, 200, 500]
 
 # Dataset
 x = np.load(file="x.npy")
@@ -35,7 +36,7 @@ x_learn, x_test, y_learn, y_test = train_test_split(
 # Folds
 rskf = RepeatedStratifiedKFold(
     n_splits=2,
-    n_repeats=30,
+    n_repeats=5,
     random_state=rnd_seed,
 )
 
@@ -49,7 +50,7 @@ for j in range(len(num_of_splits)):
     gini_data.append([])
     split_data.append([])
     for i, (train_index, test_index) in enumerate(rskf.split(x, y)):
-        ords = OurRDS(num_of_splits=num_of_splits[j], random_state=rnd_seed)
+        ords = DecisionStump(num_of_splits=num_of_splits[j], random_state=rnd_seed)
         ords.fit(x[train_index], y[train_index])
         predict_ords = ords.predict(x[test_index])
         gini_data[j].append(ords.best_gini)
@@ -58,10 +59,18 @@ for j in range(len(num_of_splits)):
 
 a_score_np = np.array(a_score_ords)
 
+mean_scores = []
+
+for i in range(len(a_score_np)):
+    mean_scores.append(np.mean(a_score_np[i, :]))
+
+print(mean_scores)
+
 print("Results")
 print(a_score_np)
+print(a_score_ords[0])
 
-np.save(file="n_split_results", arr=a_score_np)
+#np.save(file="n_split_results", arr=a_score_np)
 
 #   Plotting single experiment
 fig, ax = plot.subplots(
@@ -71,33 +80,37 @@ fig, ax = plot.subplots(
     sharey=True,
 )
 
-gdata = np.array(gini_data)
-spdata = np.array(split_data)
-
-np.save(file="gini_data", arr=gdata)
-np.save(file="split_data", arr=spdata)
-
-cos = []
-for i in split_data[0]:
-    cos.append(1)
-
-ax[0][0].scatter(split_data[0], gini_data[0], c=cos, cmap="coolwarm")
+ax[0][0].scatter(num_of_splits, mean_scores, c="black", cmap="coolwarm")
 fig.suptitle(f"Experiment - number of splits per stump. Repeated Stratified K fold, 2 splits, 30 repeats ")
 ax[0][0].set_title(f"Best gini values for {num_of_splits[0]} splits per Stump")
 
-ax[1][0].scatter(split_data[1], gini_data[1], c=cos, cmap="coolwarm")
-ax[1][0].set_title(f"Best gini values for {num_of_splits[1]} splits per Stump")
-
-ax[0][1].scatter(split_data[2], gini_data[2], c=cos, cmap="coolwarm")
-ax[0][1].set_title(f"Best gini values for {num_of_splits[2]} splits per Stump")
-
-ax[1][1].scatter(split_data[3], gini_data[3], c=cos, cmap="coolwarm")
-ax[1][1].set_title(f"Best gini values for {num_of_splits[3]} splits per Stump")
-
-ax[0][2].scatter(split_data[4], gini_data[4], c=cos, cmap="coolwarm")
-ax[0][2].set_title(f"Best gini values for {num_of_splits[4]} splits per Stump")
-
-ax[1][2].scatter(split_data[5], gini_data[5], c=cos, cmap="coolwarm")
-ax[1][2].set_title(f"Best gini values for {num_of_splits[5]} splits per Stump")
-
+# gdata = np.array(gini_data)
+# spdata = np.array(split_data)
+#
+# # np.save(file="gini_data", arr=gdata)
+# # np.save(file="split_data", arr=spdata)
+#
+# cos = []
+# for i in split_data[0]:
+#     cos.append(1)
+#
+# ax[0][0].scatter(split_data[0], gini_data[0], c=cos, cmap="coolwarm")
+# fig.suptitle(f"Experiment - number of splits per stump. Repeated Stratified K fold, 2 splits, 30 repeats ")
+# ax[0][0].set_title(f"Best gini values for {num_of_splits[0]} splits per Stump")
+#
+# ax[1][0].scatter(split_data[1], gini_data[1], c=cos, cmap="coolwarm")
+# ax[1][0].set_title(f"Best gini values for {num_of_splits[1]} splits per Stump")
+#
+# ax[0][1].scatter(split_data[2], gini_data[2], c=cos, cmap="coolwarm")
+# ax[0][1].set_title(f"Best gini values for {num_of_splits[2]} splits per Stump")
+#
+# ax[1][1].scatter(split_data[3], gini_data[3], c=cos, cmap="coolwarm")
+# ax[1][1].set_title(f"Best gini values for {num_of_splits[3]} splits per Stump")
+#
+# ax[0][2].scatter(split_data[4], gini_data[4], c=cos, cmap="coolwarm")
+# ax[0][2].set_title(f"Best gini values for {num_of_splits[4]} splits per Stump")
+#
+# ax[1][2].scatter(split_data[5], gini_data[5], c=cos, cmap="coolwarm")
+# ax[1][2].set_title(f"Best gini values for {num_of_splits[5]} splits per Stump")
+#
 plot.show()
