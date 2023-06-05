@@ -11,7 +11,7 @@ import matplotlib.pyplot as plot
 rnd = 1111
 
 features = 20
-n_classifiers = 20
+n_classifiers = 10
 
 #   TODO pobierac dane z pliku
 x, y = datasets.make_classification(
@@ -27,7 +27,7 @@ ensemble_a_score = []
 prediction = []
 rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=rnd)
 for i, (train_index, test_index) in enumerate(rskf.split(x, y)):
-    ensemble = RDSEnsemble(random_state=rnd, num_of_splits=100, n_classifiers=10)
+    ensemble = RDSEnsemble(random_state=rnd, num_of_splits=100, n_classifiers=n_classifiers)
     ensemble.fit(x[train_index], y[train_index])
     ensemble_pred = ensemble.predict(x[test_index])
     prediction.append(ensemble_pred)

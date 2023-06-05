@@ -18,6 +18,8 @@ res_one = res[0]
 print(res_one.shape)
 print(res.shape)
 
+print(res)
+
 alpha = 0.05
 
 t_stat = np.zeros((len(classifiers), len(classifiers)))

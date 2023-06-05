@@ -3,6 +3,8 @@ import random
 
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.metrics import accuracy_score
+
 from Gini import Gini
 
 
@@ -141,6 +143,7 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
         self.n_classifiers = n_classifiers
         self.num_of_splits = num_of_splits
         self.random_state = random_state
+        self.x_indexes = []
 
         np.random.seed(self.random_state)
 
@@ -152,20 +155,54 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         x_learn = self.pick_random_features(X)
+        print(self.x_indexes)
 
         for c in range(self.n_classifiers):
             self.classifiers[c].fit(x_learn[:, c], y)
 
+        # dopasowanie -- obliczenie wag
+        acc = []
+        for c_id, classifier in enumerate(self.classifiers):
+            this_X = X[:,self.x_indexes[c_id]].reshape(-1,1)
+            p = classifier.predict(this_X)
+            acc.append(accuracy_score(y,p))
+        # print(acc)
+        self.weights = acc / np.sum(acc)
+        # print(np.sum(acc))
+        # print(self.weights)
+        # print("weights len")
+        # print(len(self.weights))
         return self
 
 
     def predict(self, X):
         Y = []
         pred_list = []
-        for classifier in self.classifiers:
-            pred_list.append(classifier.predict(X))
+        for c, classifier in enumerate(self.classifiers):
+            #   Reshape (-1, 1) changes X from [1, 2, 3, ...] to [[1], [2], [3], ...]
+            this_X = X[:, self.x_indexes[c]].reshape(-1, 1)
+            # print("this_X")
+            # print(this_X)
+            pred_list.append(classifier.predict(this_X))
 
         pred_list = np.array(pred_list)
+        # print(pred_list)
+        # print(len(pred_list[0]))
+        # print(pred_list.shape)
+        # JESZCZE NIE SPRAWDZONE
+        # przejście tymczasowe na -1 zamiast 0, żeby wziąć pod uwagę wagi
+        # pred_list[pred_list == 0] = -1
+
+        # wykorzystanie wag
+        # pred_list = pred_list * self.weights[:, None] # None?
+        #
+        # print(pred_list)
+        # sum_pred = np.sum(pred_list, axis=0)
+        # print(sum_pred)
+        # pred = (sum_pred >= 0).astype(int)
+        # print(pred)
+        # END JESZCZE NIE SPRAWDZONE
+
 
         avg_pred = np.mean(pred_list, axis=0)
         pred = (avg_pred >= 0.5).astype(int)
@@ -186,6 +223,7 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
             replace=is_replace
         )
 
+        self.x_indexes = x_indexes
         x_learn = X[:, x_indexes]
         return x_learn
 
@@ -204,7 +242,6 @@ class DecisionStump(BaseEstimator):
         self.error_list_dir1 = []
 
     def fit(self, X, y):
-
         #   Choosing split points. Split points are put across the dataset with equal distance between each other
         range_list = []
         for i in range(len(X)):
@@ -292,13 +329,15 @@ class DecisionStump(BaseEstimator):
         return self
 
     def predict(self, X):
+        #   X is an array of one feature
+        #   Depending on best_direction value, y is set with 0 or 1 above the best_split_point
         if self.best_direction == 1:
             y = np.ones(shape=X.shape[0], dtype=int)
         else:
             y = np.zeros(shape=X.shape[0], dtype=int)
-        for i in range(len(X)):
-            if X[i][0] >= self.best_split_point:
-                y[i] = 1 - self.best_direction
+        for x_id, x in enumerate(X):
+            if x >= self.best_split_point:
+                y[x_id] = 1 - self.best_direction
         return y
 
     def Gini(self, P1, P2):

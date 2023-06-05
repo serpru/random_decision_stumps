@@ -49,11 +49,16 @@ if __name__ == '__main__':
         random_state=rnd_seed,
     )
 
-    ds = DecisionStump(num_of_splits=num_of_splits, random_state=rnd_seed)
-    ds.fit(x_learn[:, 0], y_learn)
-    pred = ds.predict(x_test)
+    #   Feature index to use in Decision Stump
+    feature_id = 0
 
-    learned_y = ds.predict(x_learn)
+    ds = DecisionStump(num_of_splits=num_of_splits, random_state=rnd_seed)
+    ds.fit(x_learn[:, feature_id], y_learn)
+    pred = ds.predict(x_test[:, feature_id])
+
+    learned_y = ds.predict(x_learn[:, feature_id])
+
+    print(x_learn[:, feature_id])
 
     print("x_learn size")
     print(len(x_learn))
@@ -86,11 +91,11 @@ if __name__ == '__main__':
         sharey=True,
     )
 
-    ax[0][0].scatter(x_learn[:, 0], x_learn[:, 1], c=y_learn, cmap="coolwarm")
+    ax[0][0].scatter(x_learn[:, feature_id], x_learn[:, 1], c=y_learn, cmap="coolwarm")
     fig.suptitle(f"Single Decision Stump\nAccuracy score of test split: {a_score}\nSeed {rnd_seed} ")
     ax[0][0].set_title("Learning data")
 
-    ax[1][0].scatter(x_learn[:, 0], x_learn[:, 1], c=learned_y, cmap="coolwarm")
+    ax[1][0].scatter(x_learn[:, feature_id], x_learn[:, 1], c=learned_y, cmap="coolwarm")
     for i in range(len(ds.gini_list)):
         if ds.best_split_point == ds.split_points[i]:
             ax[1][0].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.7,
@@ -102,11 +107,11 @@ if __name__ == '__main__':
         error_dir1_marker = ax[1][0].plot(ds.split_points[i], ds.error_list_dir1[i], color="red", marker='.', ms=3, alpha=0.5)
     ax[1][0].set_title("Best split for learning data")
 
-    ax[0][1].scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap="coolwarm")
+    ax[0][1].scatter(x_test[:, feature_id], x_test[:, 1], c=y_test, cmap="coolwarm")
 
     ax[0][1].set_title("Test data")
 
-    ax[1][1].scatter(x_test[:, 0], x_test[:, 1], c=pred, cmap="coolwarm")
+    ax[1][1].scatter(x_test[:, feature_id], x_test[:, 1], c=pred, cmap="coolwarm")
     for i in range(len(ds.gini_list)):
         if (ds.gini_list[i] == ds.best_gini) and (ds.best_split_point == ds.split_points[i]):
             ax[1][1].axvline(x=ds.split_points[i], color='black', linestyle="dashed", alpha=0.7,
