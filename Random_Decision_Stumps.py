@@ -1,142 +1,6 @@
-import copy
-import random
-
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
-
-from Gini import Gini
-
-
-class OurRDS(BaseEstimator):
-    def __init__(self, *args, num_of_splits, random_state):
-        self.gini = Gini()
-        self.num_of_splits = num_of_splits
-        random.seed(a=random_state)
-
-        self.split_point = 0
-        self.num_of_splits = num_of_splits
-        self.best_gini = 1
-        self.best_error = 1
-        self.best_split_point = 0
-        self.gini_list = []
-        self.split_points = []
-        self.direction = 0
-        self.best_direction = 0
-        self.error_dir_0 = 0
-        self.error_dir_1 = 0
-        self.error_list = []
-        self.error_list_dir0 = []
-        self.error_list_dir1 = []
-
-
-
-    def fit(self, X, y):
-        # 1. Podzielic na podlisty lewa / prawa, policzyc licznosc w kazdej z nich i wyliczyć prawdopodobieństwo
-        # 2. Wykonać split
-        # 3. Obliczyć gini
-        # 4. Powtarzać tyle razy, ile mamy do wyboru punktów splitu
-        # 5. Wybrać punkt splitu z najmniejszym gini
-
-        range_list = []
-        for i in range(len(X)):
-            range_list.append(X[i])
-
-        # for i in X:
-        #     range_list.append(i[0])
-        range_list.sort()
-        mean = (abs(range_list[0]) + abs(range_list[-1])) / self.num_of_splits
-
-        split_points_list = []
-        for i in range(self.num_of_splits):
-            split_points_list.append(range_list[0] + i*mean)
-
-        current_split_point = range_list[0]
-
-        for i in split_points_list:
-            self.split_point = i
-            current_split_point = i
-
-            left_leaf, right_leaf = self.slice(X, y, self.split_point)
-
-            #   Direction 0
-            classified_left_leaf_d0, classified_right_leaf_d0 = self.split(left_leaf[1], right_leaf[1])
-
-            current_gini_dir0 = self.gini.calculate_gini(classified_left_leaf_d0, classified_right_leaf_d0, left_leaf[1], right_leaf[1], direction=0)
-
-            self.error_dir_0 = self.gini.class_error(self.gini.pred_wrong, len(y))
-
-            #   Direction 1
-            classified_left_leaf_d1, classified_right_leaf_d1 = self.split(left_leaf[1], right_leaf[1], direction=1)
-            current_gini_dir1 = self.gini.calculate_gini(classified_left_leaf_d1, classified_right_leaf_d1, left_leaf[1], right_leaf[1],
-                                               direction=1)
-
-            self.error_dir_1 = self.gini.class_error(self.gini.pred_wrong, len(y))
-
-            class_error = 1
-            #   Choosing best gini and best direction
-            if self.best_gini > current_gini_dir1:
-                self.best_gini = current_gini_dir1
-                self.best_split_point = current_split_point
-                if self.error_dir_0 > self.error_dir_1:
-                    self.direction = 1
-                    self.best_error = self.error_dir_1
-                else:
-                    self.direction = 0
-                    self.best_error = self.error_dir_0
-
-            final_gini = current_gini_dir0
-            if current_gini_dir0 > current_gini_dir1:
-                final_gini = current_gini_dir1
-
-            #   Adding gini and split point to the list
-            self.split_points.append(current_split_point)
-            self.gini_list.append(final_gini)
-
-            self.error_list_dir0.append(self.error_dir_0)
-            self.error_list_dir1.append(self.error_dir_1)
-
-            #current_split_point += mean
-
-        return self
-
-    def predict(self, X):
-        arr = []
-        print(self.best_split_point)
-        for i in range(len(X)):
-            if X[i][0] >= self.best_split_point:
-                arr.append(1 - self.direction)
-            else:
-                arr.append(0 + self.direction)
-        return np.array(arr)
-
-    def slice(self, X, y, a):
-        #   Slices data into two subsets at splitting point "a"
-        left_x = []
-        right_x = []
-        left_y = []
-        right_y = []
-
-        for i in range(len(X)):
-            if X[i] >= a:
-                right_x.append(X[i])
-                right_y.append(y[i])
-            else:
-                left_x.append(X[i])
-                left_y.append(y[i])
-        return [left_x, left_y], [right_x, right_y]
-
-    def split(self, left_y, right_y, direction=0):
-        # Splits label array into two sub-arrays
-        # One has assigned 0 to it, other 1, based on direction
-        new_left_y = []
-        new_right_y = []
-        for i in left_y:
-            new_left_y.append(0+direction)
-        for i in right_y:
-            new_right_y.append(1-direction)
-        return new_left_y, new_right_y
-
 
 class RDSEnsemble(BaseEstimator, ClassifierMixin):
     def __init__(self, n_classifiers=5, num_of_splits=20, random_state=1):
@@ -155,7 +19,7 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         x_learn = self.pick_random_features(X)
-        print(self.x_indexes)
+        # print(self.x_indexes)
 
         for c in range(self.n_classifiers):
             self.classifiers[c].fit(x_learn[:, c], y)
@@ -176,36 +40,30 @@ class RDSEnsemble(BaseEstimator, ClassifierMixin):
 
 
     def predict(self, X):
-        Y = []
         pred_list = []
         for c, classifier in enumerate(self.classifiers):
             #   Reshape (-1, 1) changes X from [1, 2, 3, ...] to [[1], [2], [3], ...]
+            #   Most sklearn classifiers use this data format
             this_X = X[:, self.x_indexes[c]].reshape(-1, 1)
-            # print("this_X")
-            # print(this_X)
             pred_list.append(classifier.predict(this_X))
 
         pred_list = np.array(pred_list)
-        # print(pred_list)
-        # print(len(pred_list[0]))
-        # print(pred_list.shape)
-        # JESZCZE NIE SPRAWDZONE
-        # przejście tymczasowe na -1 zamiast 0, żeby wziąć pod uwagę wagi
-        # pred_list[pred_list == 0] = -1
 
-        # wykorzystanie wag
-        # pred_list = pred_list * self.weights[:, None] # None?
-        #
+        #   Changing from 0 : 1 to -1 : 1 to prepare for adding weights
+        pred_list[pred_list == 0] = -1
+
+        #   Adding weights to samples
+        pred_list = pred_list * self.weights[:, None] # None?
+
         # print(pred_list)
-        # sum_pred = np.sum(pred_list, axis=0)
+        sum_pred = np.sum(pred_list, axis=0)
         # print(sum_pred)
-        # pred = (sum_pred >= 0).astype(int)
+        pred = (sum_pred >= 0).astype(int)
         # print(pred)
-        # END JESZCZE NIE SPRAWDZONE
 
 
-        avg_pred = np.mean(pred_list, axis=0)
-        pred = (avg_pred >= 0.5).astype(int)
+        # avg_pred = np.mean(pred_list, axis=0)
+        # pred = (avg_pred >= 0.5).astype(int)
         return pred
 
     def pick_random_features(self, X):
@@ -243,6 +101,9 @@ class DecisionStump(BaseEstimator):
 
     def fit(self, X, y):
         #   Choosing split points. Split points are put across the dataset with equal distance between each other
+        #   Split point splits data, then gini impurity is calculated for each part (above/below split) in search
+        #   for split point with lowest gini impurity
+        #   Classification error is also calculated to determine which way to classify samples (0 | 1 or 1 | 0)
         range_list = []
         for i in range(len(X)):
             range_list.append(X[i])

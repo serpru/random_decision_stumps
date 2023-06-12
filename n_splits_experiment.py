@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 import matplotlib.pyplot as plot
 from sklearn import datasets
@@ -8,14 +6,10 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-from Random_Decision_Stumps import OurRDS, DecisionStump
 
 
 # Random Seed
 rnd_seed = 1111
-# 3423
-# 12442
-# 9865
 
 #   Number of splits to check per Stump
 num_of_splits = [2, 5, 20, 50, 200, 500]
