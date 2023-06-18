@@ -1,8 +1,8 @@
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from Random_Decision_Stumps import DecisionStump, RDSEnsemble
+from Random_Decision_Stumps import RDSEnsemble
 import matplotlib.pyplot as plot
 
 rnd_seed = 1111

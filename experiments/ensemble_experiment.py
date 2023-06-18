@@ -1,35 +1,32 @@
 import random
 import os
 import numpy as np
-import matplotlib.pyplot as plot
-from sklearn import datasets
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import  RepeatedStratifiedKFold
+
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
-from Random_Decision_Stumps import DecisionStump, RDSEnsemble
+from Random_Decision_Stumps import RDSEnsemble
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 
 
 rnd_seed = 1111
-n_classifiers = 15
+n_classifiers = 175
+n_splits = 65
 
-data_list = os.listdir(path="./datasets")
+data_list = os.listdir(path="../datasets20f")
 
 classifiers = [
     GaussianNB(),
     DecisionTreeClassifier(max_depth=1, random_state=rnd_seed),
-    RDSEnsemble(n_classifiers=n_classifiers, random_state=rnd_seed, num_of_splits=65)
+    RDSEnsemble(n_classifiers=n_classifiers, random_state=rnd_seed, num_of_splits=n_splits)
 ]
 
 res = np.zeros((len(data_list), 10, len(classifiers)))
 
 for j in range(len(data_list)):
 
-    file_path = "./datasets/" + data_list[j]
+    file_path = "../datasets20f/" + data_list[j]
     data = np.loadtxt(file_path, delimiter=",", dtype=str)
 
     X = []
@@ -58,5 +55,5 @@ print(res)
 print("Print res shape")
 print(res.shape)
 
-
+exit()
 np.save(file="../experiment_results/ensemble_results", arr=res)

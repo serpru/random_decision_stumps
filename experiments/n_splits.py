@@ -1,10 +1,8 @@
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import accuracy_score
 from Random_Decision_Stumps import DecisionStump
-from sklearn.naive_bayes import GaussianNB
-from sklearn.tree import DecisionTreeClassifier
 
 rnd_state = 1111
 

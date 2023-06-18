@@ -1,7 +1,6 @@
 from scipy import stats
 import numpy as np
 from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from Random_Decision_Stumps import DecisionStump
 import csv
@@ -106,14 +105,27 @@ for k in range(res.shape[0]):
     print(f"dataset{k} | {mean_scores[k][0]} ({std_scores[k][0]}) | {mean_scores[k][1]} ({std_scores[k][1]}) | {mean_scores[k][2]} ({std_scores[k][2]})")
     print(f"          |     {better_score2[k][0]}     |      {better_score2[k][1]}      |        {better_score2[k][2]}")
 
-exit()
+
 f = open('test.csv', 'w')
 writer = csv.writer(f)
 
 
 writer.writerow(row)
 
-row = ["dataset 1", f"{mean_scores[19][0]} ({std_scores[19][0]})", f"{mean_scores[19][1]} ({std_scores[19][1]})", f"{mean_scores[19][2]} ({std_scores[19][2]})"]
-writer.writerow(row)
+for i in range(res.shape[0]):
+    row = [f"dataset {i}", f"{mean_scores[i][0]} ({std_scores[i][0]})", f"{mean_scores[i][1]} ({std_scores[i][1]})",
+           f"{mean_scores[i][2]} ({std_scores[i][2]})"]
+    writer.writerow(row)
+    better_row = []
+    better_row.append("")
+    for x in range(len(classifiers)):
+        if len(better_score2[i][x]) >= 2:
+            better_row.append("all")
+        elif len(better_score2[i][x]) < 2 and len(better_score2[i][x]) > 0:
+            better_row.append(f"{better_score2[i][x][0]}")
+        else:
+            better_row.append("none")
+    writer.writerow(better_row)
+
 
 f.close()

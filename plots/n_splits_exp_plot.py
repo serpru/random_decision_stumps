@@ -1,11 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plot
-from sklearn import datasets
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
 
 
 res = np.load(file="../experiment_results/n_split_results.npy")
